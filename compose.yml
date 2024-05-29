@@ -1,0 +1,52 @@
+version: '3.8'
+services:
+  web:
+    build: 
+      context: .
+      dockerfile: Dockerfiles/Web
+    ports:
+      - "8050:8050"
+    depends_on:
+      - database
+    volumes:
+     - .:/app
+    networks:
+      - backend
+
+  database:
+    container_name: r_mysql
+    build:
+      dockerfile: Dockerfiles/Database
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: random_users
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: heslo
+    ports:
+      - 9906:3306
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - backend
+
+  phpmyadmin:
+    container_name: r_phpmyadmin
+    image: phpmyadmin/phpmyadmin:latest
+    restart: always
+    environment:
+      PMA_HOST: database
+      PMA_USER: admin
+      PMA_PASSWORD: heslo
+    ports:
+      - 9001:80
+    depends_on:
+      - database
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  db_data:
