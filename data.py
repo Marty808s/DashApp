@@ -73,7 +73,7 @@ def add_user():
         cnx.close()
 
 def schedule_user_addition():
-    threading.Timer(5, schedule_user_addition).start()
+    threading.Timer(20, schedule_user_addition).start()
     add_user()
     print("User added")
     get_data()
