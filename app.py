@@ -3,7 +3,6 @@ from dash.dependencies import Input, Output
 import plotly.express as px
 import pandas as pd
 import data
-import pymysql
 
 app = Dash(__name__)
 
@@ -18,7 +17,7 @@ app.layout = html.Div([
     dcc.Graph(id='sex-bargraph', figure=fig_bar_sex),
     dcc.Interval(
             id='interval-component',
-            interval=20*1000, # Interval pro update DB
+            interval=4*1000, # Interval pro update DB
             n_intervals=0
         )
 ])
