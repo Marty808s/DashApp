@@ -11,7 +11,8 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 fig_scatter_country_count = px.scatter(title="Přehled uživatel jednotlivch zemí")
 fig_gender_country = px.scatter(title="Heatmap - pohlaví jednotlivých obyvatel")
 fig_bar_sex = px.bar(title="Přehled pohlaví - berem v potaz pouze 2!")
-fig_map_scatter = px.scatter_geo(title="Mapa - země a počet uživatelů")  # Opraveno z fix_map_scatter na fig_map_scatter
+fig_map_scatter = px.scatter_geo(title="Mapa - země a počet uživatelů")
+fig_registered_time = px.line(title="Čas registrace")
 
 app.layout = html.Div([
     html.H1("Přehled uživatelů aplikace", style={'textAlign': 'center', "margin": "10px"}),
@@ -36,24 +37,35 @@ app.layout = html.Div([
     dcc.Graph(id='gender-country-graph', figure=fig_gender_country),
     dcc.Graph(id='sex-bargraph', figure=fig_bar_sex),
     dcc.Graph(id='map-scatter', figure=fig_map_scatter),  # Opraveno z fix_map_scatter na fig_map_scatter
+    dcc.Graph(id='registered-time', figure=fig_registered_time),
     dcc.Interval(
             id='interval-component',
-            interval=5*1000,  # Interval pro update DB
+            interval=2*1000,  # Interval pro update DB
             n_intervals=0
+        ),
+    html.Div([
+        dcc.DatePickerRange(
+            id='date-picker-range',
+            start_date_placeholder_text="Start Date",
+            end_date_placeholder_text="End Date",
+            display_format='YYYY-MM-DD'
         )
+    ], style={"margin": "10px auto", "width": "80%", "padding": "10px", "maxWidth": "80%", "backgroundColor": "#222", "borderColor": "#333", "color": "black"})
 ])
-
 @app.callback(
     [Output('gender-country-graph', 'figure'),
      Output('sex-bargraph', 'figure'),
      Output('scatter-country-count', 'figure'),
      Output('map-scatter', 'figure'),
      Output('country-filter', 'options'),
-     Output('total-users', 'children')],
+     Output('total-users', 'children'),
+     Output('registered-time', 'figure')],
     [Input('interval-component', 'n_intervals'),
-     Input('country-filter', 'value')]
+     Input('country-filter', 'value'),
+     Input('date-picker-range', 'start_date'),
+     Input('date-picker-range', 'end_date')]
 )
-def update_graphs(n, country_filter):
+def update_graphs(n, country_filter, start_date, end_date):
     # Získám data z DB
     try:
         raw_data = data.get_data()
@@ -107,8 +119,12 @@ def update_graphs(n, country_filter):
     print(country_filter)
     fig_map_scatter = px.scatter_geo(country_counts, locations="country_code", size="count", color="count", height=800, title="Mapa - země a počet uživatelů")
     
-    # Return updated graphs
-    return fig_gender_country, fig_bar_sex, fig_scatter_country_count, fig_map_scatter, country_options, f'Total Users: {total_users}'
+    # line graf pro vizualizaci registrací na čase s timesliderem pro každý ze států dle filtru
+    registered_time_country = df.groupby(['country', 'registered']).size().reset_index(name='count')
+    fig_registered_time = px.line(registered_time_country, x="registered", y="count", color="country", title="Čas registrace podle země", range_x=[start_date, end_date])
+    
+    # Return grafů
+    return fig_gender_country, fig_bar_sex, fig_scatter_country_count, fig_map_scatter, country_options, f'Total Users: {total_users}',fig_registered_time
 
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0', port=8050, dev_tools_hot_reload=True)
