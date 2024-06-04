@@ -19,8 +19,8 @@ Před zahájením se ujistěte, že máte na svém systému nainstalováno násl
 
 ## Struktura projektu
 
-- `app.py`: Hlavní soubor aplikace Dash.
-- `data.py`: Obsahuje funkce pro načítání a ukládání dat uživatelů.
+- `app.py`: Hlavní soubor aplikace Dash - zde se nastavuje časový interval aktualizace grafů!
+- `data.py`: Obsahuje funkce pro načítání a ukládání dat uživatelů - zde se nastavují parametry pro API! (časový údaj pro dotazování API)
 - `Dockerfiles/`: Obsahuje Dockerfiles pro webové a databázové služby.
 - `compose.yml`: Soubor Docker Compose pro orchestraci služeb.
 
