@@ -34,8 +34,10 @@ app.layout = html.Div([
         options=[],
         multi=True, 
         placeholder="Vyberte země jako globální filtr pro celý dashboard",
-        style={"margin": "10px auto", "width": "80%", "maxWidth": "80%", "backgroundColor": "#222", "borderColor": "#333", "color": "black"}),
+        style={"margin": "10px auto", "width": "80%", "backgroundColor": "#222", "borderColor": "#333", "color": "black"}),
 
+        html.Button('Reset', id='reset-button', n_clicks=0, style={"display": "block", "margin": "5px auto", "width": "20%", "backgroundColor": "#444", "color": "white", "textAlign": "center"}),
+        
         dcc.Graph(id='scatter-country-count', figure=fig_scatter_country_count),
 
         dcc.Graph(id='vek-skupin', figure=fig_vek_skupin),
@@ -67,6 +69,7 @@ app.layout = html.Div([
     )
     
 ])
+
 @app.callback(
     [Output('vek-skupin', 'figure'),
      Output('sex-bargraph', 'figure'),
@@ -117,7 +120,6 @@ def update_graphs(n, country_filter, start_date, end_date):
     age_gender_country_count = df.groupby(['country', 'age_group']).size().unstack(fill_value=0)
     fig_age_gender_country = px.imshow(age_gender_country_count, height=600, aspect='auto', title="Heatmap - věkové skupiny")
 
-    
     # Bar plot - gender by country
     gender_country_data = df.groupby(['country', 'gender']).size().reset_index(name='count')
     fig_bar_sex = px.bar(gender_country_data, x="country", y="count", color="gender", title="Přehled pohlaví v jednotlivých zemích")
@@ -145,6 +147,14 @@ def update_graphs(n, country_filter, start_date, end_date):
     
     # Return grafů
     return fig_age_gender_country, fig_bar_sex, fig_scatter_country_count, fig_map_scatter, country_options, f'Total Users: {total_users}',fig_registered_time
+
+@app.callback(
+    Output('country-filter', 'value'),
+    Input('reset-button', 'n_clicks'),
+)
+def reset_button(n):
+    if n and n > 0:
+        return []
 
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0', port=8050, dev_tools_hot_reload=True)
