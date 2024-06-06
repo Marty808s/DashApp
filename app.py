@@ -102,7 +102,7 @@ app.layout = html.Div([
      Input('date-picker-range', 'start_date'),
      Input('date-picker-range', 'end_date')]
 )
-def update_graphs(n, country_filter, start_date, end_date):
+def update_graphs(n_intervals, country_filter, start_date, end_date):
     # Získám data z DB
     try:
         raw_data = data.get_data()
