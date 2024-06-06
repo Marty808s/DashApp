@@ -6,14 +6,16 @@ import data
 import pycountry
 import dash_bootstrap_components as dbc
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
+app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY]) # Bootstrap dark theme
 
+# Definování grafů
 fig_scatter_country_count = px.scatter(title="Přehled uživatel jednotlivch zemí")
 fig_vek_skupin = px.scatter(title="Heatmap - pohlaví jednotlivých obyvatel")
 fig_bar_sex = px.bar(title="Přehled pohlaví - berem v potaz pouze 2!")
 fig_map_scatter = px.scatter_geo(title="Mapa - země a počet uživatelů")
 fig_registered_time = px.line(title="Čas registrace")
 
+# Layout aplikace
 app.layout = html.Div([
     html.H1("Přehled uživatelů aplikace", style={'textAlign': 'center', "margin": "10px", "padding": "20px"}),
     dbc.Card(
@@ -57,7 +59,7 @@ app.layout = html.Div([
 
         dcc.Interval(
                 id='interval-component',
-                interval=30*1000,  # Interval pro update DB
+                interval=60*1000,  # Interval pro update DB
                 n_intervals=0
             ),
 
@@ -70,6 +72,23 @@ app.layout = html.Div([
     
 ])
 
+
+"""
+@app.callback() -> teoretické okénko :)
+--------------------------------------------------------------------------------------------------------------
+ - Output(id_komponenty,aktualizovaná hodnota/objekt (vlastnosti))
+ - Input(id_komponenty, vstupní hodnota do volané funkce)
+
+    Output - odkazuje na komponenty, které budou po vyvolání callback funkce aktualizovány
+    Input - komponenty, co zapříčiní volání callback funkce a předají jí parametry (komponenty a vlastnosti,
+        akce, které budou volat callback funkci)
+
+    Callback funkce pak zpracovává vstupy, provádí potřebné operace (např. získání dat, výpočty)
+        a vrací hodnoty, které jsou přiřazeny k vlastnostem komponent definovaných v Output objektech
+    
+        - proto je Dash aplikace velice interaktivní - vykoná callback funkce na serveru,
+            vrací výstup na klienta
+"""
 @app.callback(
     [Output('vek-skupin', 'figure'),
      Output('sex-bargraph', 'figure'),
@@ -92,17 +111,13 @@ def update_graphs(n, country_filter, start_date, end_date):
         print(f"Zíkání dat - chyba: {e}")
         return px.scatter(title="Nemáme data.."), px.bar(title="Nemáme data.."), px.scatter(title="Nemáme data.."), px.scatter_geo(title="Nemáme data.."), []
     
-    if not raw_data:
-        print("Nezískla jsem data")
-        return px.scatter(title="Nemáme data.."), px.bar(title="Nemáme data.."), px.scatter(title="Nemáme data.."), px.scatter_geo(title="Nemáme data.."), []
-
+    # Načtu data z DB do DataFrame
     df = pd.DataFrame(raw_data, columns=['id', 'gender', 'first_name', 'last_name', 'email', 'dob', 'registered', 'phone', 'nationality', 'country', 'postcode'])
-    
     
     # Příprava dat pro Dropdown
     country_options = [{'label': country, 'value': country} for country in df['country'].unique()]
     
-    # Filtrace zemí
+    # Filtrace zemí - pokud je country filter, tak filtruju DataFrame podle zemí z filtru
     if country_filter:
         df = df[df['country'].isin(country_filter)]
 
@@ -134,7 +149,8 @@ def update_graphs(n, country_filter, start_date, end_date):
             return pycountry.countries.lookup(name).alpha_3
         except:
             return None
-
+    
+    # Převod na kod země dle názvu pro graf
     country_counts['country_code'] = country_counts['country'].apply(get_country_code)
     country_counts = country_counts[country_counts['country_code'].notna()]
     country_filter = [{'label': country, 'value': code} for country, code in zip(country_counts['country'], country_counts['country_code'])]
@@ -148,13 +164,15 @@ def update_graphs(n, country_filter, start_date, end_date):
     # Return grafů
     return fig_age_gender_country, fig_bar_sex, fig_scatter_country_count, fig_map_scatter, country_options, f'Total Users: {total_users}',fig_registered_time
 
+# callback pro resetovani filtru zemí - použiju klikání na tlačítko pro resetování filtru zemí
 @app.callback(
     Output('country-filter', 'value'),
     Input('reset-button', 'n_clicks'),
 )
 def reset_button(n):
     if n and n > 0:
-        return []
+        return [] # Vracím prázdn seznam, do komponenty country-filter - nastaví seznam zemí na prázdný
+        # To následně vyvolá vrchní callback funkci a aktualizuje graf - načte hodnoty do filtru...
 
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0', port=8050, dev_tools_hot_reload=True)
