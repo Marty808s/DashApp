@@ -200,6 +200,7 @@ def reset_button(n):
         return [] # Vracím prázdn seznam, do komponenty country-filter - nastaví seznam zemí na prázdný
         # To následně vyvolá vrchní callback funkci a aktualizuje graf - načte hodnoty do filtru...
 
+
 # Callback pro reset datumu
 @app.callback(
     [Output('date-picker-range', 'start_date'),
@@ -208,6 +209,7 @@ def reset_button(n):
 )
 def reset_datetime(n):
     return (None, None)
+
 
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0', port=8050, dev_tools_hot_reload=True)
