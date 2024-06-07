@@ -14,65 +14,101 @@ fig_bar_sex = px.bar(title="Přehled pohlaví - berem v potaz pouze 2!")
 fig_map_scatter = px.scatter_geo(title="Mapa - země a počet uživatelů")
 fig_registered_time = px.line(title="Čas registrace")
 
-app.layout = html.Div([
-    html.H1("Přehled uživatelů aplikace", style={'textAlign': 'center', "margin": "10px", "padding": "20px"}),
-    dbc.Card(
-       [
-           dbc.CardBody(
-               [
-                   html.H4("Celkový počet uživatelů:", className="card-title"),
-                   html.P(id="total-users", className="card-text"),
-               ]
-           )
-       ],
-       style={"width": "18rem", "margin": "10px", "padding-bottom": "10px", "backgroundColor": "#222", "borderColor": "#333"}
-   ),
-
-
-    dcc.Dropdown(
-        id='country-filter', 
-        options=[],
-        multi=True, 
-        placeholder="Vyberte země jako globální filtr pro celý dashboard",
-        style={"margin": "15px auto", "width": "90%", "backgroundColor": "#222", "borderColor": "#333", "color": "black"}),
-
-        html.Button('Reset', id='reset-button', n_clicks=0, style={"display": "block", "margin": "10px auto", "padding": "5px", "width": "20%", "backgroundColor": "#444", "color": "white", "textAlign": "center"}),
-        
-        dcc.Graph(id='scatter-country-count', figure=fig_scatter_country_count),
-
-        dcc.Graph(id='vek-skupin', figure=fig_vek_skupin),
-
-        dcc.Graph(id='sex-bargraph', figure=fig_bar_sex),
-
-        dcc.Graph(id='map-scatter', figure=fig_map_scatter),
-
-        html.Div([
-            dcc.DatePickerRange(
-                id='date-picker-range',
-                start_date_placeholder_text="Start Date",
-                end_date_placeholder_text="End Date",
-                display_format='YYYY-MM-DD',
-                style={"margin": "10px auto", "width": "45%", "padding": "5px", "backgroundColor": "#222", "color": "black"}
+app.layout = dbc.Container([
+    dbc.Row(
+        dbc.Col(html.H1("Přehled uživatelů aplikace", className="text-center my-4"), width=12)
+    ),
+    dbc.Row([
+        dbc.Col(
+            dbc.Card(
+                dbc.CardBody([
+                    html.H4("Celkový počet uživatelů:", className="card-title"),
+                    html.P(id="total-users", className="card-text"),
+                ]),
+                className="mb-4"
             ),
-            html.Button('Resetuj datum', id='reset-button-date', n_clicks=0, style={"margin": "10px auto", "width": "20%", "backgroundColor": "#444", "color": "white", "textAlign": "center"})
-        ], style={"display": "flex", "justify-content": "space-between", "width": "80%", "margin": "10px auto"}),
-        
-        dcc.Graph(id='registered-time', figure=fig_registered_time),
-
-        dcc.Interval(
+            width=6, style={"display": "inline-block"}
+        ),
+        dbc.Col(
+            dbc.Card(
+                dbc.CardBody([
+                    html.H4("Počet unikátních zemí:", className="card-title"),
+                    html.P(id="total-countries", className="card-text"),
+                ]),
+                className="mb-4"
+            ),
+            width=6, style={"display": "inline-block"}
+        )
+    ], justify="start"),
+    dbc.Row(
+        dbc.Col(
+            dcc.Dropdown(
+                id='country-filter',
+                options=[],
+                multi=True,
+                placeholder="Vyberte země jako globální filtr pro celý dashboard",
+                style={"width": "100%", "backgroundColor": "#222", "borderColor": "#333", "color": "black"}
+            ),
+            width=12, className="mb-3"
+        )
+    ),
+    dbc.Row(
+        dbc.Col(
+            dbc.Button('Resetuj filtr zemí', id='reset-button', n_clicks=0, className="btn-dark btn-block"),
+            width=4, className="mb-3"
+        )
+    ),
+    dbc.Row(
+        dbc.Col(dcc.Graph(id='scatter-country-count', figure=fig_scatter_country_count), width=12, className="mb-3")
+    ),
+    dbc.Row(
+        dbc.Col(dcc.Graph(id='vek-skupin', figure=fig_vek_skupin), width=12, className="mb-3")
+    ),
+    dbc.Row(
+        dbc.Col(dcc.Graph(id='sex-bargraph', figure=fig_bar_sex), width=12, className="mb-3")
+    ),
+    dbc.Row(
+        dbc.Col(dcc.Graph(id='map-scatter', figure=fig_map_scatter), width=12, className="mb-3")
+    ),
+    dbc.Row(
+        dbc.Col(
+            html.Div([
+                dcc.DatePickerRange(
+                    id='date-picker-range',
+                    start_date_placeholder_text="Start Date",
+                    end_date_placeholder_text="End Date",
+                    display_format='YYYY-MM-DD',
+                    style={"width": "45%", "padding": "5px", "backgroundColor": "#222", "color": "white"}
+                ),
+                dbc.Button('Resetuj datum', id='reset-button-date', n_clicks=0, className="btn-dark ml-2")
+            ], style={"display": "flex", "justify-content": "space-between", "width": "100%"}),
+            width=12, className="mb-3"
+        )
+    ),
+    dbc.Row(
+        dbc.Col(dcc.Graph(id='registered-time', figure=fig_registered_time), width=12, className="mb-3")
+    ),
+    dbc.Row(
+        dbc.Col(
+            dcc.Interval(
                 id='interval-component',
                 interval=60*1000,  # Interval pro update DB
                 n_intervals=0
             ),
-
-    html.Footer(
-        html.P(
-            "Made with ❤ by Martin Vlnas!",
-            style={"textAlign": "center", "margin": "10px 0"}
+            width=12
+        )
+    ),
+    dbc.Row(
+        dbc.Col(
+            html.Footer(
+                html.P("Made with ❤ by Martin Vlnas!", className="text-center"),
+                className="mt-4"
+            ),
+            width=12
         )
     )
-    
 ])
+
 
 @app.callback(
     [Output('vek-skupin', 'figure'),
@@ -81,6 +117,7 @@ app.layout = html.Div([
      Output('map-scatter', 'figure'),
      Output('country-filter', 'options'),
      Output('total-users', 'children'),
+     Output('total-countries', 'children'),
      Output('registered-time', 'figure')],
     [Input('interval-component', 'n_intervals'),
      Input('country-filter', 'value'),
@@ -93,7 +130,7 @@ def update_graphs(n_intervals, country_filter, start_date, end_date):
         raw_data = data.get_data()
         total_users = len(raw_data)
     except Exception as e:
-        print(f"Zíkání dat - chyba: {e}")
+        print(f"Získání dat - chyba: {e}")
         return px.scatter(title="Nemáme data.."), px.bar(title="Nemáme data.."), px.scatter(title="Nemáme data.."), px.scatter_geo(title="Nemáme data.."), []
     
     if not raw_data:
@@ -102,8 +139,10 @@ def update_graphs(n_intervals, country_filter, start_date, end_date):
 
     df = pd.DataFrame(raw_data, columns=['id', 'gender', 'first_name', 'last_name', 'email', 'dob', 'registered', 'phone', 'nationality', 'country', 'postcode'])
     
+    countries_unique = df['country'].unique()
+    total_countries = len(countries_unique)
     # Příprava dat pro Dropdown
-    country_options = [{'label': country, 'value': country} for country in df['country'].unique()]
+    country_options = [{'label': country, 'value': country} for country in countries_unique]
     
     # Filtrace zemí
     if country_filter:
@@ -149,7 +188,8 @@ def update_graphs(n_intervals, country_filter, start_date, end_date):
     fig_registered_time = px.line(registered_time_country, x="registered", y="count", color="country", title="Čas registrace podle země", range_x=[start_date, end_date])
     
     # Return grafů
-    return fig_age_gender_country, fig_bar_sex, fig_scatter_country_count, fig_map_scatter, country_options, f'{total_users}',fig_registered_time
+    return fig_age_gender_country, fig_bar_sex, fig_scatter_country_count, fig_map_scatter, country_options, f'{total_users}', f'{total_countries}', fig_registered_time
+
 
 @app.callback(
     Output('country-filter', 'value'),
