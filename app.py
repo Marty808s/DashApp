@@ -8,19 +8,21 @@ import dash_bootstrap_components as dbc
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 
-fig_scatter_country_count = px.scatter(title="Přehled uživatel jednotlivch zemí")
-fig_vek_skupin = px.scatter(title="Heatmap - pohlaví jednotlivých obyvatel")
-fig_bar_sex = px.bar(title="Přehled pohlaví - berem v potaz pouze 2!")
-fig_map_scatter = px.scatter_geo(title="Mapa - země a počet uživatelů")
-fig_registered_time = px.line(title="Čas registrace")
+# Definice grafů
+fig_scatter_country_count = px.scatter()
+fig_vek_skupin = px.scatter()
+fig_bar_sex = px.bar()
+fig_map_scatter = px.scatter_geo()
+fig_registered_time = px.line()
 
+# Layout aplikace
 app.layout = html.Div([
     html.H1("Přehled uživatelů aplikace", style={'textAlign': 'center', "margin": "10px", "padding": "20px"}),
     dbc.Card(
        [
            dbc.CardBody(
                [
-                   html.H4("Celkový počet uživatelů", className="card-title"),
+                   html.H4("Celkový počet uživatelů:", className="card-title"),
                    html.P(id="total-users", className="card-text"),
                ]
            )
@@ -34,9 +36,9 @@ app.layout = html.Div([
         options=[],
         multi=True, 
         placeholder="Vyberte země jako globální filtr pro celý dashboard",
-        style={"margin": "10px auto", "width": "80%", "backgroundColor": "#222", "borderColor": "#333", "color": "black"}),
+        style={"margin": "15px auto", "width": "90%", "backgroundColor": "#222", "borderColor": "#333", "color": "black"}),
 
-        html.Button('Reset', id='reset-button', n_clicks=0, style={"display": "block", "margin": "5px auto", "width": "20%", "backgroundColor": "#444", "color": "white", "textAlign": "center"}),
+        html.Button('Reset', id='reset-button', n_clicks=0, style={"display": "block", "margin": "10px auto", "padding": "5px", "width": "20%", "backgroundColor": "#444", "color": "white", "textAlign": "center"}),
         
         dcc.Graph(id='scatter-country-count', figure=fig_scatter_country_count),
 
@@ -46,13 +48,17 @@ app.layout = html.Div([
 
         dcc.Graph(id='map-scatter', figure=fig_map_scatter),
 
-        dcc.DatePickerRange(
-            id='date-picker-range',
-            start_date_placeholder_text="Start Date",
-            end_date_placeholder_text="End Date",
-            display_format='YYYY-MM-DD',
-            style={"margin": "10px auto", "width": "80%", "padding": "10px", "maxWidth": "80%", "backgroundColor": "#222", "color": "black"}),
-
+        html.Div([
+            dcc.DatePickerRange(
+                id='date-picker-range',
+                start_date_placeholder_text="Start Date",
+                end_date_placeholder_text="End Date",
+                display_format='YYYY-MM-DD',
+                style={"margin": "10px auto", "width": "45%", "padding": "5px", "backgroundColor": "#222", "color": "black"}
+            ),
+            html.Button('Resetuj datum', id='reset-button-date', n_clicks=0, style={"margin": "10px auto", "width": "20%", "backgroundColor": "#444", "color": "white", "textAlign": "center"})
+        ], style={"display": "flex", "justify-content": "space-between", "width": "80%", "margin": "10px auto"}),
+        
         dcc.Graph(id='registered-time', figure=fig_registered_time),
 
         dcc.Interval(
@@ -70,6 +76,7 @@ app.layout = html.Div([
     
 ])
 
+# Callback pro aktualizaci grafů
 @app.callback(
     [Output('vek-skupin', 'figure'),
      Output('sex-bargraph', 'figure'),
@@ -96,13 +103,13 @@ def update_graphs(n, country_filter, start_date, end_date):
         print("Nezískla jsem data")
         return px.scatter(title="Nemáme data.."), px.bar(title="Nemáme data.."), px.scatter(title="Nemáme data.."), px.scatter_geo(title="Nemáme data.."), []
 
+    # Dataframe z dat
     df = pd.DataFrame(raw_data, columns=['id', 'gender', 'first_name', 'last_name', 'email', 'dob', 'registered', 'phone', 'nationality', 'country', 'postcode'])
-    
     
     # Příprava dat pro Dropdown
     country_options = [{'label': country, 'value': country} for country in df['country'].unique()]
     
-    # Filtrace zemí
+    # Filtrace zemí - pokud jsoiu vybreané země
     if country_filter:
         df = df[df['country'].isin(country_filter)]
 
@@ -112,11 +119,10 @@ def update_graphs(n, country_filter, start_date, end_date):
 
     # Heatmap - vekove skupiny
     df['dob'] = pd.to_datetime(df['dob'])
-    df['age'] = (pd.Timestamp('now') - df['dob']).dt.days // 365
+    df['age'] = (pd.Timestamp('now') - df['dob']).dt.days // 365 # Získám float hodnotu let
     bins = [0, 18, 30, 45, 60, 75, 100]
     labels = ['0-18', '19-30', '31-45', '46-60', '61-75', '76-100']
     df['age_group'] = pd.cut(df['age'], bins=bins, labels=labels, right=False)
-
     age_gender_country_count = df.groupby(['country', 'age_group']).size().unstack(fill_value=0)
     fig_age_gender_country = px.imshow(age_gender_country_count, height=600, aspect='auto', title="Heatmap - věkové skupiny")
 
@@ -124,11 +130,11 @@ def update_graphs(n, country_filter, start_date, end_date):
     gender_country_data = df.groupby(['country', 'gender']).size().reset_index(name='count')
     fig_bar_sex = px.bar(gender_country_data, x="country", y="count", color="gender", title="Přehled pohlaví v jednotlivých zemích")
 
-    # Mapa uživatelů
+    # Mapa uživatelů - geografická vizualizace
     country_counts = df['country'].value_counts().reset_index()
     country_counts.columns = ['country', 'count']
 
-    # Převod na kod země dle názvu pro graf
+    # Převod na kod země dle názvu pro graf kvůli navázaní na mapu
     def get_country_code(name):
         try:
             return pycountry.countries.lookup(name).alpha_3
@@ -146,8 +152,9 @@ def update_graphs(n, country_filter, start_date, end_date):
     fig_registered_time = px.line(registered_time_country, x="registered", y="count", color="country", title="Čas registrace podle země", range_x=[start_date, end_date])
     
     # Return grafů
-    return fig_age_gender_country, fig_bar_sex, fig_scatter_country_count, fig_map_scatter, country_options, f'Total Users: {total_users}',fig_registered_time
+    return fig_age_gender_country, fig_bar_sex, fig_scatter_country_count, fig_map_scatter, country_options, f'{total_users}',fig_registered_time
 
+# Callback pro reset filtru země
 @app.callback(
     Output('country-filter', 'value'),
     Input('reset-button', 'n_clicks'),
@@ -155,6 +162,15 @@ def update_graphs(n, country_filter, start_date, end_date):
 def reset_button(n):
     if n and n > 0:
         return []
+
+# Callback pro reset datumu
+@app.callback(
+    [Output('date-picker-range', 'start_date'),
+     Output('date-picker-range', 'end_date')],
+    [Input('reset-button-date', 'n_clicks')],
+)
+def reset_datetime(n):
+    return (None, None)
 
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0', port=8050, dev_tools_hot_reload=True)
