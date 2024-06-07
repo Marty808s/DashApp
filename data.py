@@ -34,6 +34,7 @@ def get_user():
     )
     return values
 
+
 # API pro vizualizaci dat
 def get_data():
     # Vytvořím spojení s databází
@@ -44,6 +45,7 @@ def get_data():
     data = cursor.fetchall()
     cursor.close()
     return data
+
 
 def add_user():
     cnx = get_database_connection()
@@ -76,6 +78,7 @@ def add_user():
     finally:
         cursor.close()
         cnx.close()
+
 
 # Asynchroní přidávání uživatelů - v časovém intervalu
 def schedule_user_addition():
