@@ -6,16 +6,14 @@ import data
 import pycountry
 import dash_bootstrap_components as dbc
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
+app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY]) # Bootstrap dark theme
 
-# Definice grafů
-fig_scatter_country_count = px.scatter()
-fig_vek_skupin = px.scatter()
-fig_bar_sex = px.bar()
-fig_map_scatter = px.scatter_geo()
-fig_registered_time = px.line()
+fig_scatter_country_count = px.scatter(title="Přehled uživatel jednotlivch zemí")
+fig_vek_skupin = px.scatter(title="Heatmap - pohlaví jednotlivých obyvatel")
+fig_bar_sex = px.bar(title="Přehled pohlaví - berem v potaz pouze 2!")
+fig_map_scatter = px.scatter_geo(title="Mapa - země a počet uživatelů")
+fig_registered_time = px.line(title="Čas registrace")
 
-# Layout aplikace
 app.layout = html.Div([
     html.H1("Přehled uživatelů aplikace", style={'textAlign': 'center', "margin": "10px", "padding": "20px"}),
     dbc.Card(
@@ -63,7 +61,7 @@ app.layout = html.Div([
 
         dcc.Interval(
                 id='interval-component',
-                interval=30*1000,  # Interval pro update DB
+                interval=60*1000,  # Interval pro update DB
                 n_intervals=0
             ),
 
@@ -76,7 +74,6 @@ app.layout = html.Div([
     
 ])
 
-# Callback pro aktualizaci grafů
 @app.callback(
     [Output('vek-skupin', 'figure'),
      Output('sex-bargraph', 'figure'),
@@ -90,7 +87,7 @@ app.layout = html.Div([
      Input('date-picker-range', 'start_date'),
      Input('date-picker-range', 'end_date')]
 )
-def update_graphs(n, country_filter, start_date, end_date):
+def update_graphs(n_intervals, country_filter, start_date, end_date):
     # Získám data z DB
     try:
         raw_data = data.get_data()
@@ -103,13 +100,12 @@ def update_graphs(n, country_filter, start_date, end_date):
         print("Nezískla jsem data")
         return px.scatter(title="Nemáme data.."), px.bar(title="Nemáme data.."), px.scatter(title="Nemáme data.."), px.scatter_geo(title="Nemáme data.."), []
 
-    # Dataframe z dat
     df = pd.DataFrame(raw_data, columns=['id', 'gender', 'first_name', 'last_name', 'email', 'dob', 'registered', 'phone', 'nationality', 'country', 'postcode'])
     
     # Příprava dat pro Dropdown
     country_options = [{'label': country, 'value': country} for country in df['country'].unique()]
     
-    # Filtrace zemí - pokud jsoiu vybreané země
+    # Filtrace zemí
     if country_filter:
         df = df[df['country'].isin(country_filter)]
 
@@ -140,7 +136,8 @@ def update_graphs(n, country_filter, start_date, end_date):
             return pycountry.countries.lookup(name).alpha_3
         except:
             return None
-
+    
+    # Převod na kod země dle názvu pro graf
     country_counts['country_code'] = country_counts['country'].apply(get_country_code)
     country_counts = country_counts[country_counts['country_code'].notna()]
     country_filter = [{'label': country, 'value': code} for country, code in zip(country_counts['country'], country_counts['country_code'])]
@@ -154,14 +151,14 @@ def update_graphs(n, country_filter, start_date, end_date):
     # Return grafů
     return fig_age_gender_country, fig_bar_sex, fig_scatter_country_count, fig_map_scatter, country_options, f'{total_users}',fig_registered_time
 
-# Callback pro reset filtru země
 @app.callback(
     Output('country-filter', 'value'),
     Input('reset-button', 'n_clicks'),
 )
 def reset_button(n):
     if n and n > 0:
-        return []
+        return [] # Vracím prázdn seznam, do komponenty country-filter - nastaví seznam zemí na prázdný
+        # To následně vyvolá vrchní callback funkci a aktualizuje graf - načte hodnoty do filtru...
 
 # Callback pro reset datumu
 @app.callback(

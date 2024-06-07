@@ -42,3 +42,5 @@ docker-compose -f compose.yml up --build
 ## Použití
 
 Jakmile je aplikace spuštěna, můžete interagovat s Dash rozhraním pro zobrazení a analýzu dat náhodně generovaných uživatelů. PHPMyAdmin vám umožní přímo spravovat databázi prostřednictvím webového rozhraní.
+
+Dost možná bude nutné resetovat web service - dash app kvůli pozdější inicializaci DB....
