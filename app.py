@@ -92,7 +92,7 @@ app.layout = dbc.Container([
         dbc.Col(
             dcc.Interval(
                 id='interval-component',
-                interval=60*1000,  # Interval pro update DB
+                interval=120*1000,  # Interval pro update DB
                 n_intervals=0
             ),
             width=12
@@ -129,6 +129,8 @@ def update_graphs(n_intervals, country_filter, start_date, end_date):
     try:
         raw_data = data.get_data()
         total_users = len(raw_data)
+        print("Získal jsem data!")
+        print(total_users)
     except Exception as e:
         print(f"Získání dat - chyba: {e}")
         return px.scatter(title="Nemáme data.."), px.bar(title="Nemáme data.."), px.scatter(title="Nemáme data.."), px.scatter_geo(title="Nemáme data.."), []
@@ -180,7 +182,6 @@ def update_graphs(n_intervals, country_filter, start_date, end_date):
     country_counts['country_code'] = country_counts['country'].apply(get_country_code)
     country_counts = country_counts[country_counts['country_code'].notna()]
     country_filter = [{'label': country, 'value': code} for country, code in zip(country_counts['country'], country_counts['country_code'])]
-    print(country_filter)
     fig_map_scatter = px.scatter_geo(country_counts, locations="country_code", size="count", color="count", height=800, title="Mapa - země a počet uživatelů")
     
     # line graf pro vizualizaci registrací na čase s timesliderem pro každý ze států dle filtru
