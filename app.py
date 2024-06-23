@@ -135,11 +135,7 @@ def update_graphs(n_intervals, country_filter, start_date, end_date):
         print(f"Získání dat - chyba: {e}")
         return px.scatter(title="Nemáme data.."), px.bar(title="Nemáme data.."), px.scatter(title="Nemáme data.."), px.scatter_geo(title="Nemáme data.."), []
     
-    if not raw_data:
-        print("Nezískla jsem data")
-        return px.scatter(title="Nemáme data.."), px.bar(title="Nemáme data.."), px.scatter(title="Nemáme data.."), px.scatter_geo(title="Nemáme data.."), []
-
-    # Vstupní data frame => to jednotlivých metod (grafů)
+    # Vstupní data frame => to do jednotlivých metod (grafů) - pomocí importu
     df = pd.DataFrame(raw_data, columns=['id', 'gender', 'first_name', 'last_name', 'email', 'dob', 'registered', 'phone', 'nationality', 'country', 'postcode'])
     
     countries_unique = df['country'].unique()
