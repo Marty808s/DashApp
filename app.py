@@ -5,6 +5,7 @@ import pandas as pd
 import data
 import pycountry
 import dash_bootstrap_components as dbc
+import graph
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY]) # Bootstrap dark theme
 
@@ -139,6 +140,7 @@ def update_graphs(n_intervals, country_filter, start_date, end_date):
         print("Nezískla jsem data")
         return px.scatter(title="Nemáme data.."), px.bar(title="Nemáme data.."), px.scatter(title="Nemáme data.."), px.scatter_geo(title="Nemáme data.."), []
 
+    # Vstupní data frame => to jednotlivých metod (grafů)
     df = pd.DataFrame(raw_data, columns=['id', 'gender', 'first_name', 'last_name', 'email', 'dob', 'registered', 'phone', 'nationality', 'country', 'postcode'])
     
     countries_unique = df['country'].unique()
@@ -151,42 +153,19 @@ def update_graphs(n_intervals, country_filter, start_date, end_date):
         df = df[df['country'].isin(country_filter)]
 
     # Scatter - země a count()
-    scatter_country_count = df.groupby(['country']).size().reset_index(name='count')
-    fig_scatter_country_count = px.scatter(scatter_country_count, x="country", y="count", size="count", color="count", title="Přehled uživatel jednotlivch zemí")
+    fig_scatter_country_count = graph.scatter_zeme_count(df)
 
     # Heatmap - vekove skupiny
-    df['dob'] = pd.to_datetime(df['dob'])
-    df['age'] = (pd.Timestamp('now') - df['dob']).dt.days // 365 # Získám float hodnotu let
-    bins = [0, 18, 30, 45, 60, 75, 100]
-    labels = ['0-18', '19-30', '31-45', '46-60', '61-75', '76-100']
-    df['age_group'] = pd.cut(df['age'], bins=bins, labels=labels, right=False)
-    age_gender_country_count = df.groupby(['country', 'age_group']).size().unstack(fill_value=0)
-    fig_age_gender_country = px.imshow(age_gender_country_count, height=600, aspect='auto', title="Heatmap - věkové skupiny")
+    fig_age_gender_country = graph.heatmap_vekove_skupiny(df)
 
     # Bar plot - gender by country
-    gender_country_data = df.groupby(['country', 'gender']).size().reset_index(name='count')
-    fig_bar_sex = px.bar(gender_country_data, x="country", y="count", color="gender", title="Přehled pohlaví v jednotlivých zemích")
+    fig_bar_sex = graph.barplot_gender_country(df)
 
     # Mapa uživatelů - geografická vizualizace
-    country_counts = df['country'].value_counts().reset_index()
-    country_counts.columns = ['country', 'count']
-
-    # Převod na kod země dle názvu pro graf kvůli navázaní na mapu
-    def get_country_code(name):
-        try:
-            return pycountry.countries.lookup(name).alpha_3
-        except:
-            return None
-    
-    # Převod na kod země dle názvu pro graf
-    country_counts['country_code'] = country_counts['country'].apply(get_country_code)
-    country_counts = country_counts[country_counts['country_code'].notna()]
-    country_filter = [{'label': country, 'value': code} for country, code in zip(country_counts['country'], country_counts['country_code'])]
-    fig_map_scatter = px.scatter_geo(country_counts, locations="country_code", size="count", color="count", height=800, title="Mapa - země a počet uživatelů")
+    fig_map_scatter = graph.mapa_uzivatelu(df)
     
     # line graf pro vizualizaci registrací na čase s timesliderem pro každý ze států dle filtru
-    registered_time_country = df.groupby(['country', 'registered']).size().reset_index(name='count')
-    fig_registered_time = px.line(registered_time_country, x="registered", y="count", color="country", title="Čas registrace podle země", range_x=[start_date, end_date])
+    fig_registered_time = graph.line_registrace_zeme(df, start_date, end_date)
     
     # Return grafů
     return fig_age_gender_country, fig_bar_sex, fig_scatter_country_count, fig_map_scatter, country_options, f'{total_users}', f'{total_countries}', fig_registered_time
