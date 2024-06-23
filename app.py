@@ -102,8 +102,7 @@ app.layout = dbc.Container([
     dbc.Row(
         dbc.Col(
             html.Footer(
-                html.P("Made with ❤ by Martin Vlnas!", className="text-center"),
-                className="mt-4"
+                html.P("Made with ❤ by Martin Vlnas!", className="text-center")
             ),
             width=12
         )
