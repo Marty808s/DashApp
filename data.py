@@ -17,6 +17,7 @@ def get_database_connection():
 # Inicializace MetaData
 metadata = MetaData()
 
+# Tahat data z ORM!
 tab_users = Table('users', metadata,
                   Column('id', Integer, primary_key=True),
                   Column('gender', String(10)),
