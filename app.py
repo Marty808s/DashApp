@@ -9,6 +9,7 @@ import graph
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY]) # Bootstrap dark theme
 
+# Vytvoření empty grafů - KOUKNOUT! zda se propisuje title...
 fig_scatter_country_count = px.scatter(title="Přehled uživatel jednotlivch zemí")
 fig_vek_skupin = px.scatter(title="Heatmap - pohlaví jednotlivých obyvatel")
 fig_bar_sex = px.bar(title="Přehled pohlaví - berem v potaz pouze 2!")
@@ -90,10 +91,11 @@ app.layout = dbc.Container([
         dbc.Col(dcc.Graph(id='registered-time', figure=fig_registered_time), width=12, className="mb-3")
     ),
     dbc.Row(
+    # Tohle asi pryč - není třeba vizualizace prázdné - asi nahoru jako empty jen pro id
         dbc.Col(
             dcc.Interval(
                 id='interval-component',
-                interval=120*1000,  # Interval pro update DB
+                interval=30*1000,  # Interval pro update DB
                 n_intervals=0
             ),
             width=12

@@ -122,7 +122,7 @@ def add_user():
 # Asynchroní přidávání uživatelů - v časovém intervalu
 def schedule_user_addition():
     print("__Operace na vlákně__")
-    threading.Timer(30, schedule_user_addition).start()
+    threading.Timer(120, schedule_user_addition).start()
     add_user()
 
 if __name__ == "__main__":
