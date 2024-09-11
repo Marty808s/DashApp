@@ -9,9 +9,9 @@ import graph
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY]) # Bootstrap dark theme
 
-# Vytvoření empty grafů - KOUKNOUT! zda se propisuje title...
+# Vytvoření empty grafů
 fig_scatter_country_count = px.scatter(title="Přehled uživatel jednotlivch zemí")
-fig_vek_skupin = px.scatter(title="Heatmap - pohlaví jednotlivých obyvatel")
+fig_vek_skupin = px.scatter(title="Heatmap - věkové skupiny")
 fig_bar_sex = px.bar(title="Přehled pohlaví - berem v potaz pouze 2!")
 fig_map_scatter = px.scatter_geo(title="Mapa - země a počet uživatelů")
 fig_registered_time = px.line(title="Čas registrace")
@@ -30,7 +30,7 @@ app.layout = dbc.Container([
         interval=1000,  # Interval pro update dat - zavolá funkci
         n_intervals=0
     ),
-    html.Div(id='countdown-display', className="text-center mb-3" # Display pro countdown
+    html.Div(id='countdown-display', className="text-center mb-3"
     ),
     dbc.Row(
         dbc.Col(html.H1("Přehled uživatelů aplikace", className="text-center my-4"), width=12)
@@ -77,6 +77,31 @@ app.layout = dbc.Container([
     ),
     dbc.Row(
         dbc.Col(dcc.Graph(id='scatter-country-count', figure=fig_scatter_country_count), width=12, className="mb-3")
+    ),
+    dbc.Row(
+        dbc.Col(
+            html.Div([
+                html.H4("Filtr věkových skupin"),
+                dcc.RangeSlider(
+                    id='age-filter',
+                    min=0,
+                    max=100,
+                    step=1,
+                    marks={i: str(i) for i in range(0, 101, 10)},
+                    value=[0, 30, 60, 100], # inital hodnoty pro 3 skupiny
+                    allowCross=False,
+                    pushable=1,
+                    tooltip={"placement": "bottom", "always_visible": True}
+                ),
+                html.Div(id='age-filter-output')
+            ])
+        ),
+    ),
+    dbc.Row(
+        dbc.Col(
+            dbc.Button('Resetuj věkové skupiny', id='reset-button-age', n_clicks=0, className="btn-dark btn-block"),
+            width=4, className="mb-3 mt-3"
+        ),
     ),
     dbc.Row(
         dbc.Col(dcc.Graph(id='vek-skupin', figure=fig_vek_skupin), width=12, className="mb-3")
@@ -127,10 +152,11 @@ app.layout = dbc.Container([
      Output('registered-time', 'figure')],
     [Input('interval-component', 'n_intervals'),
      Input('country-filter', 'value'),
+     Input('age-filter', 'value'),
      Input('date-picker-range', 'start_date'),
      Input('date-picker-range', 'end_date')]
 )
-def update_graphs(n_intervals, country_filter, start_date, end_date):
+def update_graphs(n_intervals, country_filter, age_filter, start_date, end_date):
     # Získám data z DB
     try:
         raw_data = data.get_data()
@@ -142,11 +168,12 @@ def update_graphs(n_intervals, country_filter, start_date, end_date):
         print(f"Získání dat - chyba: {e}")
         return px.scatter(title="Nemáme data.."), px.bar(title="Nemáme data.."), px.scatter(title="Nemáme data.."), px.scatter_geo(title="Nemáme data.."), []
     
-    # Vstupní data frame => to do jednotlivých metod (grafů) - pomocí importu
+    # Vstupní data frame
     df = pd.DataFrame(raw_data, columns=['id', 'gender', 'first_name', 'last_name', 'email', 'dob', 'registered', 'phone', 'nationality', 'country', 'postcode'])
     
     countries_unique = df['country'].unique()
     total_countries = len(countries_unique)
+
     # Příprava dat pro Dropdown
     country_options = [{'label': country, 'value': country} for country in countries_unique]
     
@@ -158,7 +185,10 @@ def update_graphs(n_intervals, country_filter, start_date, end_date):
     fig_scatter_country_count = graph.scatter_zeme_count(df)
 
     # Heatmap - vekove skupiny
-    fig_age_gender_country = graph.heatmap_vekove_skupiny(df)
+    if age_filter:
+        fig_age_gender_country = graph.heatmap_vekove_skupiny(df, age_filter)
+    else:
+        fig_age_gender_country = graph.heatmap_vekove_skupiny(df)
 
     # Bar plot - gender by country
     fig_bar_sex = graph.barplot_gender_country(df)
@@ -183,6 +213,16 @@ def reset_button(n):
         # To následně vyvolá vrchní callback funkci a aktualizuje graf - načte hodnoty do filtru...
 
 
+@app.callback(
+    Output('age-filter', 'value'),
+    Input('reset-button-age', 'n_clicks'),
+)
+def reset_button_age(n):
+    if n and n > 0:
+        return [0, 30, 60, 100]
+
+
+
 # Callback pro reset datumu
 @app.callback(
     [Output('date-picker-range', 'start_date'),
@@ -200,8 +240,6 @@ def reset_datetime(n):
 def update_countdown(n_countdown, n_update):
     seconds_left = update_interval - (n_countdown % update_interval)
     return f"Příští aktualizace dat za: {seconds_left} sekund"
-
-
 
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0', port=8050, dev_tools_hot_reload=True)

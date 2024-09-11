@@ -11,14 +11,23 @@ def scatter_zeme_count(input_data):
 
 
 # Heatmap - vekove skupiny
-def heatmap_vekove_skupiny(input_data):
+def heatmap_vekove_skupiny(input_data, filter_age_group=None):
     input_data['dob'] = pd.to_datetime(input_data['dob'])
-    input_data['age'] = (pd.Timestamp('now') - input_data['dob']).dt.days // 365 # Získám float hodnotu let
-    bins = [0, 18, 30, 45, 60, 75, 100]
-    labels = ['0-18', '19-30', '31-45', '46-60', '61-75', '76-100']
+    input_data['age'] = (pd.Timestamp('now') - input_data['dob']).dt.days // 365
+
+    if filter_age_group:
+        bins = [filter_age_group[0], filter_age_group[1], filter_age_group[2], filter_age_group[3]]
+        labels = [f"{filter_age_group[0]}-{filter_age_group[1]}", f"{filter_age_group[1]}-{filter_age_group[2]}", f"{filter_age_group[2]}-{filter_age_group[3]}"]
+    else:
+        # Default filter
+        bins = [0, 30, 60, 100]
+        labels = ['0-30', '31-60', '61-100']
+
     input_data['age_group'] = pd.cut(input_data['age'], bins=bins, labels=labels, right=False)
     age_gender_country_count = input_data.groupby(['country', 'age_group']).size().unstack(fill_value=0)
-    fig_age_gender_country = px.imshow(age_gender_country_count, height=600, aspect='auto', title="Heatmap - věkové skupiny")
+    
+    title = "Heatmap - věkové skupiny" if not filter_age_group else f"Heatmap - věková skupina: {filter_age_group[0]} - {filter_age_group[1]}"
+    fig_age_gender_country = px.imshow(age_gender_country_count, height=600, aspect='auto', title=title)
     return fig_age_gender_country
 
 
