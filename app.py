@@ -16,7 +16,22 @@ fig_bar_sex = px.bar(title="Přehled pohlaví - berem v potaz pouze 2!")
 fig_map_scatter = px.scatter_geo(title="Mapa - země a počet uživatelů")
 fig_registered_time = px.line(title="Čas registrace")
 
+# Update interval - 30 sekund
+update_interval = 30
+
 app.layout = dbc.Container([
+    dcc.Interval(
+        id='interval-component',
+        interval=update_interval*1000,  # Interval pro update dat - zavolá funkci
+        n_intervals=0
+    ),
+    dcc.Interval(
+        id='countdown-interval',
+        interval=1000,  # Interval pro update dat - zavolá funkci
+        n_intervals=0
+    ),
+    html.Div(id='countdown-display', className="text-center mb-3" # Display pro countdown
+    ),
     dbc.Row(
         dbc.Col(html.H1("Přehled uživatelů aplikace", className="text-center my-4"), width=12)
     ),
@@ -91,17 +106,6 @@ app.layout = dbc.Container([
         dbc.Col(dcc.Graph(id='registered-time', figure=fig_registered_time), width=12, className="mb-3")
     ),
     dbc.Row(
-    # Tohle asi pryč - není třeba vizualizace prázdné - asi nahoru jako empty jen pro id
-        dbc.Col(
-            dcc.Interval(
-                id='interval-component',
-                interval=30*1000,  # Interval pro update DB
-                n_intervals=0
-            ),
-            width=12
-        )
-    ),
-    dbc.Row(
         dbc.Col(
             html.Footer(
                 html.P("Made with ❤ by Martin Vlnas!", className="text-center")
@@ -130,6 +134,7 @@ def update_graphs(n_intervals, country_filter, start_date, end_date):
     # Získám data z DB
     try:
         raw_data = data.get_data()
+        raw_data = raw_data.values() # seznam uživatelů - odstraím klíč id
         total_users = len(raw_data)
         print("Získal jsem data!")
         print(total_users)
@@ -186,6 +191,16 @@ def reset_button(n):
 )
 def reset_datetime(n):
     return (None, None)
+
+@app.callback(
+    Output('countdown-display', 'children'),
+    [Input('countdown-interval', 'n_intervals'),
+     Input('interval-component', 'n_intervals')]
+)
+def update_countdown(n_countdown, n_update):
+    seconds_left = update_interval - (n_countdown % update_interval)
+    return f"Příští aktualizace dat za: {seconds_left} sekund"
+
 
 
 if __name__ == '__main__':

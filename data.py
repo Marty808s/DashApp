@@ -4,34 +4,39 @@ import pymysql
 import json
 from datetime import datetime
 import threading
-from sqlalchemy import create_engine, Table, Column, Integer, String, Date, MetaData, text, insert  
+from sqlalchemy.orm import DeclarativeBase, Session
+from sqlalchemy import create_engine, Table, Column, Integer, String, Date, MetaData, text, insert, select  
 
 # API pro generování random uživatelů a jejich dajů
 url = 'https://randomuser.me/api/'
 
-# Připojení k databázi
+# Připojení k db
+# nebo localhost:9906/database:3306
 def get_database_connection():
     engine = create_engine('mysql+pymysql://admin:heslo@database:3306/random_users')
     return engine.connect()
 
-# Inicializace MetaData
-metadata = MetaData()
+# Session
+session = Session(get_database_connection())
 
-# Tahat data z ORM!
-tab_users = Table('users', metadata,
-                  Column('id', Integer, primary_key=True),
-                  Column('gender', String(10)),
-                  Column('first_name', String(100)),
-                  Column('last_name', String(100)),
-                  Column('email', String(255)),
-                  Column('dob', String(64)),
-                  Column('registered', String(64)),
-                  Column('phone', String(20)),
-                  Column('nationality', String(10)),
-                  Column('country', String(100)),
-                  Column('postcode', String(20)),
-                  autoload_with=get_database_connection()
-                  )
+class Base(DeclarativeBase):
+    pass
+
+# ORM - tabulka users
+class User(Base):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    gender = Column(String(10))
+    first_name = Column(String(100))
+    last_name = Column(String(100))
+    email = Column(String(255))
+    dob = Column(String(64))
+    registered = Column(String(64))
+    phone = Column(String(20))
+    nationality = Column(String(10))
+    country = Column(String(100))
+    postcode = Column(String(20))
+
 
 # Vstup z API
 def get_user():
@@ -55,19 +60,39 @@ def get_user():
 
 # API pro vizualizaci dat
 def get_data():
-    connection = get_database_connection()
     try:
-        result = connection.execute(text("SELECT * FROM users"))
-        data = result.fetchall()
-        return data
+        stmt = select(User)
+        result = session.execute(stmt)
+        users = result.scalars().all() # vrátím seznam objektů
+        print(len(users))
+        users_dict = {}  # slovník pro výstup
+
+        for user in users:
+            user_dict = {
+                'id': user.id,
+                'gender': user.gender,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'email': user.email,
+                'dob': user.dob,
+                'registered': user.registered,
+                'phone': user.phone,
+                'nationality': user.nationality,
+                'country': user.country,
+                'postcode': user.postcode
+            }
+            users_dict[user.id] = user_dict
+
+        print(users_dict)
+        return users_dict
+
     except Exception as e:
         print("Získání dat - chyba:", e)
     finally:
-        connection.close()
+        session.close()
 
 
 def add_user():
-    connection = get_database_connection()
     print("Připojení k databázi pro přidání uživatele.")
     values = get_user()
     print(f"Získané hodnoty z API: {values}")
@@ -110,20 +135,21 @@ def add_user():
 
     # Vložení do DB
     try:
-        stmt = insert(tab_users).values(insert_data)
-        connection.execute(stmt)
+        user = User(**insert_data)
+        session.add(user)
+        session.commit()
         print("Uživatel přidán!")
-        connection.commit()
     except Exception as e:
         print("Chyba při insertu", e)
+        session.rollback()
     finally:
-        connection.close()
+        session.close()
 
 
 # Asynchroní přidávání uživatelů - v časovém intervalu
 def schedule_user_addition():
     print("__Operace na vlákně__")
-    threading.Timer(120, schedule_user_addition).start()
+    threading.Timer(600, schedule_user_addition).start()
     add_user()
 
 if __name__ == "__main__":
