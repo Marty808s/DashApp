@@ -26,7 +26,7 @@ def heatmap_vekove_skupiny(input_data, filter_age_group=None):
     input_data['age_group'] = pd.cut(input_data['age'], bins=bins, labels=labels, right=False)
     age_gender_country_count = input_data.groupby(['country', 'age_group']).size().unstack(fill_value=0)
     
-    title = "Heatmap - věkové skupiny" if not filter_age_group else f"Heatmap - věková skupina: {filter_age_group[0]} - {filter_age_group[1]}"
+    title = "Heatmap - věkové skupiny"
     fig_age_gender_country = px.imshow(age_gender_country_count, height=600, aspect='auto', title=title)
     return fig_age_gender_country
 
