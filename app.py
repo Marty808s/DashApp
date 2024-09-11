@@ -221,8 +221,6 @@ def reset_button_age(n):
     if n and n > 0:
         return [0, 30, 60, 100]
 
-
-
 # Callback pro reset datumu
 @app.callback(
     [Output('date-picker-range', 'start_date'),
