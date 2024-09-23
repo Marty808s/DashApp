@@ -140,6 +140,17 @@ app.layout = dbc.Container([
     )
 ])
 
+def prepare_data():
+    try:
+        raw_data = data.get_data()
+        raw_data = raw_data.values() # seznam uživatelů - odstraím klíč id
+        total_users = len(raw_data)
+        print("Získal jsem data!")
+        print(total_users)
+    except Exception as e:
+        print(f"Získání dat - chyba: {e}")
+    return raw_data, total_users
+
 
 @app.callback(
     [Output('vek-skupin', 'figure'),
@@ -159,15 +170,10 @@ app.layout = dbc.Container([
 def update_graphs(n_intervals, country_filter, age_filter, start_date, end_date):
     # Získám data z DB
     try:
-        raw_data = data.get_data()
-        raw_data = raw_data.values() # seznam uživatelů - odstraím klíč id
-        total_users = len(raw_data)
-        print("Získal jsem data!")
-        print(total_users)
+        raw_data, total_users = prepare_data()
     except Exception as e:
         print(f"Získání dat - chyba: {e}")
-        return px.scatter(title="Nemáme data.."), px.bar(title="Nemáme data.."), px.scatter(title="Nemáme data.."), px.scatter_geo(title="Nemáme data.."), []
-    
+
     # Vstupní data frame
     df = pd.DataFrame(raw_data, columns=['id', 'gender', 'first_name', 'last_name', 'email', 'dob', 'registered', 'phone', 'nationality', 'country', 'postcode'])
     
@@ -181,7 +187,7 @@ def update_graphs(n_intervals, country_filter, age_filter, start_date, end_date)
     if country_filter:
         df = df[df['country'].isin(country_filter)]
 
-    # Scatter - země a count()
+    # Scatter - země
     fig_scatter_country_count = graph.scatter_zeme_count(df)
 
     # Heatmap - vekove skupiny

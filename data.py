@@ -83,7 +83,7 @@ def get_data():
             }
             users_dict[user.id] = user_dict
 
-        print(users_dict)
+        #print(users_dict)
         return users_dict
 
     except Exception as e:
@@ -114,6 +114,7 @@ def add_user():
         registered_formatted = registered_original  # Ponechávám původní řetězec, pokud formátování selže
         print(f"Error formatting registered date: {registered_original}")
 
+    # Ve values nahradím původní dob a reg date za formátované hodnoty..
     values = values[:4] + (dob_formatted, registered_formatted) + values[6:]
 
     # Slovník pro insert
@@ -130,8 +131,6 @@ def add_user():
         'postcode': values[9]
     }
 
-    for i in insert_data:
-        print(f"{i}: {insert_data[i]}")
 
     # Vložení do DB
     try:
